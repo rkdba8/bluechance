@@ -1,6 +1,7 @@
 const https = require('https');
 
-const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html';
+// Nouvelle URL du produit Amber Silk
+const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -51,7 +52,7 @@ function sendTelegramMessage(text) {
 
 async function run() {
     try {
-        console.log("Vérification de la page Coolblue...");
+        console.log("Vérification de la page Coolblue (Amber Silk)...");
         const response = await fetchPage(PRODUCT_URL);
 
         if (response.statusCode !== 200) {
@@ -71,11 +72,11 @@ async function run() {
             console.log('🎉 Seconde chance détectée ! Envoi du message Telegram...');
             sendTelegramMessage(
                 `🎉 Une version "Seconde Chance" est disponible !\n` +
-                `Produit : Dyson Airwrap Co-anda 2x Straight + Wavy Ceramic Pink\n` +
+                `Produit : Dyson Airwrap Co-anda 2x Straight + Wavy Limited Edition Amber Silk\n` +
                 `${secondChanceUrl}`
             );
         } else {
-            console.log('Aucune seconde chance pour le moment.');
+            console.log('Aucune seconde chance pour le moment sur ce modèle.');
         }
     } catch (error) {
         console.error('Erreur lors de l\'exécution :', error);
