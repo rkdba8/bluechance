@@ -1,7 +1,6 @@
 const https = require('https');
 
-//const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
-const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html';
+const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -69,18 +68,20 @@ async function run() {
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction du prix de la seconde chance
-            // On cherche le bloc de prix situé juste après le texte de la seconde chance
+            // 2. Extraction fiable du prix de la seconde chance
             let priceText = "Prix non spécifié";
-            
-            // Recherche d'un motif qui capture le prix de seconde chance (ex: 575 dans votre snippet)
-            // On isole la portion du code après "Deuxième Chance intéressant"
             const indexChance = html.indexOf('Deuxième Chance intéressant');
             if (indexChance !== -1) {
-                const sliceHtml = html.substring(indexChance, indexChance + 1000); // On regarde les 1000 caractères suivants
-                const priceMatch = sliceHtml.match(/<p class="main-information-pszl8z">.*?€\s*([\d\s]+)/);
+                // On isole la portion de code HTML autour de l'offre
+                const sliceHtml = html.substring(indexChance, indexChance + 600);
+                
+                // On cherche spécifiquement le bloc de prix de la seconde chance (classe main-information-pszl8z)
+                // Le HTML de Coolblue sépare souvent le montant et les virgules/symboles (ex: 575 <!-- -->,-)
+                const priceMatch = sliceHtml.match(/class="main-information-pszl8z"[^>]*>([\s\S]*?)<\/p>/);
                 if (priceMatch) {
-                    priceText = priceMatch[1].replace(/\s+/g, '') + ' €';
+                    // On nettoie le texte HTML récupéré pour ne garder que les chiffres et symboles propres
+                    let rawPrice = priceMatch[1].replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '').trim();
+                    priceText = rawPrice.replace(/\s+/g, ' ');
                 }
             }
 
