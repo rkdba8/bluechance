@@ -3,7 +3,7 @@ name: Coolblue Seconde Chance Tracker
 on:
   schedule:
     # S'exécute toutes les 10 minutes
-    - cron: '*/10 * * * *'
+    - cron: '*/12 * * * *'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions de GitHub
 
 jobs:
