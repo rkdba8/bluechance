@@ -74,15 +74,13 @@ async function run() {
             const indexChance = html.indexOf('Deuxième Chance intéressant');
             if (indexChance !== -1) {
                 // On isole la portion de code HTML autour de l'offre
-                const sliceHtml = html.substring(indexChance, indexChance + 600);
+                const sliceHtml = html.substring(indexChance, indexChance + 500);
                 
-                // On cherche spécifiquement le bloc de prix de la seconde chance (classe main-information-pszl8z)
-                // Le HTML de Coolblue sépare souvent le montant et les virgules/symboles (ex: 575 <!-- -->,-)
-                const priceMatch = sliceHtml.match(/class="main-information-pszl8z"[^>]*>([\s\S]*?)<\/p>/);
+                // Extraction basée sur votre snippet exact : € 575 ,-
+                const priceMatch = sliceHtml.match(/€\s*([\d\s]+)(?:<!-- -->)?,-/);
                 if (priceMatch) {
-                    // On nettoie le texte HTML récupéré pour ne garder que les chiffres et symboles propres
-                    let rawPrice = priceMatch[1].replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '').trim();
-                    priceText = rawPrice.replace(/\s+/g, ' ');
+                    const cleanPrice = priceMatch[1].replace(/\s+/g, '');
+                    priceText = `€ ${cleanPrice},-`;
                 }
             }
 
