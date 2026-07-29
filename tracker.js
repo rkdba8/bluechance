@@ -69,18 +69,20 @@ async function run() {
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction fiable du prix de la seconde chance
+            // 2. Extraction infaillible du prix de la seconde chance
             let priceText = "Prix non spécifié";
             const indexChance = html.indexOf('Deuxième Chance intéressant');
             if (indexChance !== -1) {
-                // On isole la portion de code HTML autour de l'offre
-                const sliceHtml = html.substring(indexChance, indexChance + 500);
+                const sliceHtml = html.substring(indexChance, indexChance + 600);
                 
-                // Extraction basée sur votre snippet exact : € 575 ,-
-                const priceMatch = sliceHtml.match(/€\s*([\d\s]+)(?:<!-- -->)?,-/);
+                // On cherche n'importe quel nombre à 3 chiffres (ou plus) qui se trouve après la mention de la seconde chance
+                const priceMatch = sliceHtml.match(/main-information-pszl8z[^>]*>([\s\S]*?)<\/p>/);
                 if (priceMatch) {
-                    const cleanPrice = priceMatch[1].replace(/\s+/g, '');
-                    priceText = `€ ${cleanPrice},-`;
+                    let rawPrice = priceMatch[1].replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '').trim();
+                    // On s'assure de formater proprement si on trouve des chiffres
+                    if (/\d+/.test(rawPrice)) {
+                        priceText = rawPrice.replace(/\s+/g, ' ');
+                    }
                 }
             }
 
