@@ -1,4 +1,7 @@
 name: Coolblue Seconde Chance Tracker
+uses: actions/setup-node@v4
+with:
+  node-version: '22'
 
 on:
   schedule:
