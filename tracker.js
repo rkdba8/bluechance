@@ -69,17 +69,23 @@ async function run() {
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction ultra-simple et robuste basée sur la position du texte
+            // 2. Extraction du prix avec nettoyage HTML
             let priceText = "Prix non spécifié";
             const indexChance = html.indexOf('Deuxième Chance intéressant');
             
             if (indexChance !== -1) {
-                const sliceHtml = html.substring(indexChance, indexChance + 400);
-                // On cherche directement le symbole € suivi des chiffres du prix
-                const priceMatch = sliceHtml.match(/€\s*([0-9\s]+)/);
+                // On coupe 500 caractères à partir de la mention de la seconde chance
+                const sliceHtml = html.substring(indexChance, indexChance + 500);
+                
+                // LA SOLUTION MAGIQUE : on supprime absolument toutes les balises HTML de ce bloc
+                // Ainsi "€ </span>575" devient simplement "€ 575"
+                const cleanText = sliceHtml.replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '');
+                
+                // Maintenant, on cherche simplement le symbole € suivi de chiffres
+                const priceMatch = cleanText.match(/€\s*([0-9\s]+)/);
                 if (priceMatch) {
                     const cleanPrice = priceMatch[1].replace(/\s+/g, '');
-                    priceText = `€ ${cleanPrice},-`;
+                    priceText = `${cleanPrice} €`; // Affichage propre, ex: 575 €
                 }
             }
 
