@@ -4,11 +4,6 @@ const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Variable simulant l'état (stocké dans les variables d'environnement ou géré par GitHub)
-// Note: Sur GitHub Actions, pour mémoriser l'état d'une exécution à l'autre, 
-// on peut utiliser les GitHub Actions Cache ou envoyer un message uniquement si dispo.
-// Ici, on envoie une alerte si la page contient la mention "Deuxième Chance".
-
 function fetchPage(url) {
     return new Promise((resolve, reject) => {
         const options = {
@@ -34,13 +29,22 @@ function sendTelegramMessage(text) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Content-Length': data.length
+            'Content-Length': Buffer.byteLength(data)
         }
     };
 
     const req = https.request(options, (res) => {
-        res.on('data', () => {});
+        let responseBody = '';
+        res.on('data', (chunk) => { responseBody += chunk; });
+        res.on('end', () => {
+            console.log(`Réponse Telegram (Code ${res.statusCode}) :`, responseBody);
+        });
     });
+
+    req.on('error', (error) => {
+        console.error('Erreur réseau lors de l\'envoi Telegram :', error);
+    });
+
     req.write(data);
     req.end();
 }
@@ -51,7 +55,7 @@ async function run() {
         const response = await fetchPage(PRODUCT_URL);
 
         if (response.statusCode !== 200) {
-            console.log(`Erreur HTTP: ${response.statusCode}`);
+            console.log(`Erreur HTTP Coolblue: ${response.statusCode}`);
             return;
         }
 
