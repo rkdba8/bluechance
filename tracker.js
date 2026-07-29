@@ -79,29 +79,39 @@ async function checkProduct(product) {
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction du prix autour du lien (avant ET après)
+            // 2. Extraction du prix dans le bloc Seconde Chance
             let priceText = "Prix non spécifié";
             const indexChance = html.indexOf(secondChanceUrl);
             
             if (indexChance !== -1) {
-                // On prend 400 caractères avant et 800 après le lien
-                const start = Math.max(0, indexChance - 400);
-                const end = Math.min(html.length, indexChance + 800);
-                const sliceHtml = html.substring(start, end);
+                // Zone ciblée autour du lien seconde chance (50 caractères avant, 600 après)
+                const start = Math.max(0, indexChance - 50);
+                const end = Math.min(html.length, indexChance + 600);
+                let sliceHtml = html.substring(start, end);
                 
-                // Nettoyage complet des balises HTML et espaces
+                // Supprimer les prix barrés HTML s'il y en a (tags <del>, class former, etc.)
+                sliceHtml = sliceHtml.replace(/<[^>]*class="[^"]*(former|line-through|strike|old)[^"]*"[^>]*>[\s\S]*?<\/[^>]+>/gi, '');
+                sliceHtml = sliceHtml.replace(/<(del|s|strike)>[\s\S]*?<\/\1>/gi, '');
+
+                // Nettoyage des balises HTML
                 const cleanText = sliceHtml
                     .replace(/<!--[\s\S]*?-->/g, ' ')
                     .replace(/<[^>]*>/g, ' ')
                     .replace(/\s+/g, ' ');
 
-                // Recherche d'un montant à 3 chiffres (ex: 575) associé au symbole € ou ,-
-                const priceMatch = cleanText.match(/€\s*(\d{3,4})/) || 
-                                   cleanText.match(/(\d{3,4})\s*€/) ||
-                                   cleanText.match(/(\d{3,4})\s*[,-]/);
+                // Récupérer tous les montants trouvés dans le bloc
+                const matches = [...cleanText.matchAll(/(?:€\s*(\d{3,4})|(\d{3,4})\s*€|(\d{3,4})\s*[,-])/g)];
+                
+                if (matches.length > 0) {
+                    const prices = matches
+                        .map(m => parseInt(m[1] || m[2] || m[3]))
+                        .filter(p => !isNaN(p));
 
-                if (priceMatch) {
-                    priceText = `${priceMatch[1]} €`;
+                    if (prices.length > 0) {
+                        // Le prix Seconde Chance est toujours le prix le plus bas trouvé
+                        const secondChancePrice = Math.min(...prices);
+                        priceText = `${secondChancePrice} €`;
+                    }
                 }
             }
 
