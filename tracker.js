@@ -1,7 +1,17 @@
 const https = require('https');
 
-//const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
-const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html';
+// Liste des produits à surveiller
+const PRODUCTS = [
+    {
+        name: "Dyson Airwrap Co-anda 2x (Amber Silk)",
+        url: "https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html"
+    },
+    {
+        name: "Dyson Airwrap Co-anda 2x (Ceramic Pink)",
+        url: "https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html"
+    }
+];
+
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -50,57 +60,58 @@ function sendTelegramMessage(text) {
     req.end();
 }
 
-async function run() {
+async function checkProduct(product) {
     try {
-        console.log("Vérification de la page Coolblue (Amber Silk)...");
-        const response = await fetchPage(PRODUCT_URL);
+        console.log(`Vérification : ${product.name}...`);
+        const response = await fetchPage(product.url);
 
         if (response.statusCode !== 200) {
-            console.log(`Erreur HTTP Coolblue: ${response.statusCode}`);
+            console.log(`Erreur HTTP Coolblue (${response.statusCode}) pour ${product.name}`);
             return;
         }
 
         const html = response.body;
 
-        // 1. On cherche le lien de la Seconde Chance
+        // 1. Détection de la Seconde Chance
         const match = html.match(/https:\/\/www\.coolblue\.be\/fr\/produit-deuxieme-chance\/\d+/);
         const hasSecondChanceActive = html.includes('Deuxième Chance intéressant') || html.includes('Tweede kans');
 
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction du prix avec nettoyage HTML
+            // 2. Extraction du prix découpée depuis l'emplacement du lien
             let priceText = "Prix non spécifié";
-            const indexChance = html.indexOf('Deuxième Chance intéressant');
+            const indexChance = html.indexOf(secondChanceUrl);
             
             if (indexChance !== -1) {
-                // On coupe 500 caractères à partir de la mention de la seconde chance
-                const sliceHtml = html.substring(indexChance, indexChance + 500);
-                
-                // LA SOLUTION MAGIQUE : on supprime absolument toutes les balises HTML de ce bloc
-                // Ainsi "€ </span>575" devient simplement "€ 575"
+                const sliceHtml = html.substring(indexChance, indexChance + 600);
                 const cleanText = sliceHtml.replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '');
                 
-                // Maintenant, on cherche simplement le symbole € suivi de chiffres
                 const priceMatch = cleanText.match(/€\s*([0-9\s]+)/);
                 if (priceMatch) {
                     const cleanPrice = priceMatch[1].replace(/\s+/g, '');
-                    priceText = `${cleanPrice} €`; // Affichage propre, ex: 575 €
+                    priceText = `${cleanPrice} €`;
                 }
             }
 
-            console.log('🎉 Vraie Seconde chance disponible ! Envoi du message Telegram...');
+            console.log(`🎉 Seconde chance disponible pour ${product.name} ! Envoi Telegram...`);
             sendTelegramMessage(
                 `🎉 Une version "Seconde Chance" est DISPONIBLE !\n` +
-                `Produit : Dyson Airwrap Co-anda 2x Straight + Wavy Limited Edition Amber Silk\n` +
+                `Produit : ${product.name}\n` +
                 `💰 Prix : ${priceText}\n` +
                 `🔗 Lien : ${secondChanceUrl}`
             );
         } else {
-            console.log('Aucune seconde chance active pour le moment.');
+            console.log(`Pas de seconde chance active pour ${product.name}.`);
         }
     } catch (error) {
-        console.error('Erreur lors de l\'exécution :', error);
+        console.error(`Erreur lors de l'exécution pour ${product.name} :`, error);
+    }
+}
+
+async function run() {
+    for (const product of PRODUCTS) {
+        await checkProduct(product);
     }
 }
 
