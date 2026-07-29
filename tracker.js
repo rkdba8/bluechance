@@ -1,6 +1,6 @@
 const https = require('https');
 
-const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
+const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
