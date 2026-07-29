@@ -79,18 +79,29 @@ async function checkProduct(product) {
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
-            // 2. Extraction du prix découpée depuis l'emplacement du lien
+            // 2. Extraction du prix autour du lien (avant ET après)
             let priceText = "Prix non spécifié";
             const indexChance = html.indexOf(secondChanceUrl);
             
             if (indexChance !== -1) {
-                const sliceHtml = html.substring(indexChance, indexChance + 600);
-                const cleanText = sliceHtml.replace(/<[^>]*>/g, '').replace(/<!--[\s\S]*?-->/g, '');
+                // On prend 400 caractères avant et 800 après le lien
+                const start = Math.max(0, indexChance - 400);
+                const end = Math.min(html.length, indexChance + 800);
+                const sliceHtml = html.substring(start, end);
                 
-                const priceMatch = cleanText.match(/€\s*([0-9\s]+)/);
+                // Nettoyage complet des balises HTML et espaces
+                const cleanText = sliceHtml
+                    .replace(/<!--[\s\S]*?-->/g, ' ')
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/\s+/g, ' ');
+
+                // Recherche d'un montant à 3 chiffres (ex: 575) associé au symbole € ou ,-
+                const priceMatch = cleanText.match(/€\s*(\d{3,4})/) || 
+                                   cleanText.match(/(\d{3,4})\s*€/) ||
+                                   cleanText.match(/(\d{3,4})\s*[,-]/);
+
                 if (priceMatch) {
-                    const cleanPrice = priceMatch[1].replace(/\s+/g, '');
-                    priceText = `${cleanPrice} €`;
+                    priceText = `${priceMatch[1]} €`;
                 }
             }
 
