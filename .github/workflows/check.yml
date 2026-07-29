@@ -1,7 +1,4 @@
 name: Coolblue Seconde Chance Tracker
-uses: actions/setup-node@v4
-with:
-  node-version: '22'
 
 on:
   schedule:
@@ -19,7 +16,7 @@ jobs:
       - name: Configuration de Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Lancer le script de vérification
         env:
