@@ -1,6 +1,5 @@
 const https = require('https');
 
-// Nouvelle URL du produit Amber Silk
 const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -61,22 +60,23 @@ async function run() {
         }
 
         const html = response.body;
-        const available = html.includes('produit-deuxieme-chance') 
-                        || html.includes('Deuxième Chance')
-                        || html.includes('Seconde chance');
 
-        if (available) {
-            const match = html.match(/https:\/\/www\.coolblue\.be\/fr\/produit-deuxieme-chance\/\d+/);
-            const secondChanceUrl = match ? match[0] : PRODUCT_URL;
+        // On cherche précisément le lien de la Seconde Chance et sa classe associée (`main-information-bfw612`)
+        // ou le texte "Deuxième Chance intéressant" qui n'apparaît que lorsque l'offre est active sur la page produit.
+        const match = html.match(/https:\/\/www\.coolblue\.be\/fr\/produit-deuxieme-chance\/\d+/);
+        const hasSecondChanceActive = html.includes('Deuxième Chance intéressant') || html.includes('Tweede kans');
 
-            console.log('🎉 Seconde chance détectée ! Envoi du message Telegram...');
+        if (match && hasSecondChanceActive) {
+            const secondChanceUrl = match[0];
+
+            console.log('🎉 Vraie Seconde chance disponible ! Envoi du message Telegram...');
             sendTelegramMessage(
-                `🎉 Une version "Seconde Chance" est disponible !\n` +
+                `🎉 Une version "Seconde Chance" est DISPONIBLE !\n` +
                 `Produit : Dyson Airwrap Co-anda 2x Straight + Wavy Limited Edition Amber Silk\n` +
                 `${secondChanceUrl}`
             );
         } else {
-            console.log('Aucune seconde chance pour le moment sur ce modèle.');
+            console.log('Aucune seconde chance active pour le moment.');
         }
     } catch (error) {
         console.error('Erreur lors de l\'exécution :', error);
