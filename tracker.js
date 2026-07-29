@@ -1,6 +1,6 @@
 const https = require('https');
 
-const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968427/dyson-airwrap-co-anda-2x-straight-wavy-ceramic-pink.html';
+const PRODUCT_URL = 'https://www.coolblue.be/fr/produit/968429/dyson-airwrap-co-anda-2x-straight-wavy-limited-edition-amber-silk.html';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -61,19 +61,34 @@ async function run() {
 
         const html = response.body;
 
-        // On cherche précisément le lien de la Seconde Chance et sa classe associée (`main-information-bfw612`)
-        // ou le texte "Deuxième Chance intéressant" qui n'apparaît que lorsque l'offre est active sur la page produit.
+        // 1. On cherche le lien de la Seconde Chance
         const match = html.match(/https:\/\/www\.coolblue\.be\/fr\/produit-deuxieme-chance\/\d+/);
         const hasSecondChanceActive = html.includes('Deuxième Chance intéressant') || html.includes('Tweede kans');
 
         if (match && hasSecondChanceActive) {
             const secondChanceUrl = match[0];
 
+            // 2. Extraction du prix de la seconde chance
+            // On cherche le bloc de prix situé juste après le texte de la seconde chance
+            let priceText = "Prix non spécifié";
+            
+            // Recherche d'un motif qui capture le prix de seconde chance (ex: 575 dans votre snippet)
+            // On isole la portion du code après "Deuxième Chance intéressant"
+            const indexChance = html.indexOf('Deuxième Chance intéressant');
+            if (indexChance !== -1) {
+                const sliceHtml = html.substring(indexChance, indexChance + 1000); // On regarde les 1000 caractères suivants
+                const priceMatch = sliceHtml.match(/<p class="main-information-pszl8z">.*?€\s*([\d\s]+)/);
+                if (priceMatch) {
+                    priceText = priceMatch[1].replace(/\s+/g, '') + ' €';
+                }
+            }
+
             console.log('🎉 Vraie Seconde chance disponible ! Envoi du message Telegram...');
             sendTelegramMessage(
                 `🎉 Une version "Seconde Chance" est DISPONIBLE !\n` +
                 `Produit : Dyson Airwrap Co-anda 2x Straight + Wavy Limited Edition Amber Silk\n` +
-                `${secondChanceUrl}`
+                `💰 Prix : ${priceText}\n` +
+                `🔗 Lien : ${secondChanceUrl}`
             );
         } else {
             console.log('Aucune seconde chance active pour le moment.');
