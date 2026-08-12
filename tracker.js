@@ -9,7 +9,7 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 // du radio "Non abimé" dans les logs, si jamais le site change de structure.
 const DEBUG = process.env.DEBUG === 'true';
 
-function fetchPage(url) {
+function fetchPage(url, redirectsLeft = 5) {
     return new Promise((resolve, reject) => {
         const options = {
             headers: {
@@ -18,6 +18,22 @@ function fetchPage(url) {
             }
         };
         https.get(url, options, (res) => {
+            // Coolblue répond en 301/302/307/308 sur certaines URLs (par ex.
+            // /produit-deuxieme-chance/<id> qui redirige vers l'URL finale
+            // avec le slug). On suit la redirection au lieu d'abandonner.
+            const isRedirect = [301, 302, 303, 307, 308].includes(res.statusCode);
+            if (isRedirect && res.headers.location) {
+                res.resume(); // vide la réponse pour libérer le socket
+                if (redirectsLeft <= 0) {
+                    reject(new Error('Trop de redirections'));
+                    return;
+                }
+                const nextUrl = new URL(res.headers.location, url).toString();
+                console.log(`Redirection (${res.statusCode}) vers : ${nextUrl}`);
+                resolve(fetchPage(nextUrl, redirectsLeft - 1));
+                return;
+            }
+
             let data = '';
             res.on('data', (chunk) => { data += chunk; });
             res.on('end', () => { resolve({ statusCode: res.statusCode, body: data }); });
